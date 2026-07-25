@@ -18,11 +18,11 @@ using Newtonsoft.Json;
 
 namespace Oxide.Plugins
 {
-    [Info("Night Zombies", "0x89A", "3.4.2")]
+    [Info("Night Zombies", "0x89A", "3.4.3")]
     [Description("Spawns and kills zombies at set times")]
     class NightZombies : RustPlugin
     {
-        private const string DeathSound = "assets/prefabs/npc/murderer/sound/death.prefab";
+        //private const string DeathSound = "assets/prefabs/npc/murderer/sound/death.prefab";
         private const string RemoveMeMethodName = nameof(DroppedItemContainer.RemoveMe);
         private const int GrenadeItemId = 1840822026;
         
@@ -127,7 +127,7 @@ namespace Oxide.Plugins
 
         private object OnPlayerDeath(ScarecrowNPC scarecrow, HitInfo info)
         {
-            Effect.server.Run(DeathSound, scarecrow.transform.position);
+            //Effect.server.Run(DeathSound, scarecrow.transform.position);
             _spawnController.ZombieDied(scarecrow);
 
             if (_config.Destroy.LeaveCorpseKilled)
@@ -381,11 +381,14 @@ namespace Oxide.Plugins
 
                 if (!_config.Behaviour.ThrowGrenades)
                 {
-                    foreach (Item item in zombie.inventory.FindItemsByItemID(GrenadeItemId))
+					List<Item> items = Facepunch.Pool.Get<List<Item>>();
+					zombie.inventory.FindItemsByItemID(items, GrenadeItemId);
+                    foreach (Item item in items)
                     {
                         item.Remove();
                     }
-
+					Facepunch.Pool.Free(ref items);
+					
                     ItemManager.DoRemoves();
                 }
 
@@ -394,7 +397,7 @@ namespace Oxide.Plugins
 
             private bool GetRandomPlayer(out BasePlayer player)
             {
-                List<BasePlayer> players = Pool.GetList<BasePlayer>();
+                List<BasePlayer> players = Facepunch.Pool.Get<List<BasePlayer>>();
 
                 foreach (BasePlayer bplayer in BasePlayer.activePlayerList)
                 {
@@ -408,7 +411,7 @@ namespace Oxide.Plugins
 
                 player = players.GetRandom();
 
-                Pool.FreeList(ref players);
+                Facepunch.Pool.FreeUnmanaged(ref players);
                 
                 return player;
             }
